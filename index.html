@@ -91,6 +91,8 @@ select.btn option { font-weight: normal; }
 .no-signal span { border: 1px solid #333; padding: 8px 16px; }
 .no-signal.hide { display: none; }
 
+.capture-panel.hide { display: none; }
+
 .thumbnails {
   display: flex; gap: 6px; padding: 8px 12px;
   border-top: 2px solid #000; background: #fff;
@@ -155,9 +157,13 @@ select.btn option { font-weight: normal; }
     </optgroup>
   </select>
   <button class="btn" id="captureBtn">[CAPTURE]</button>
-  <button class="btn outline" id="saveBtn">SAVE</button>
   <button class="btn outline" id="clearBtn">CLEAR</button>
   <button class="btn outline" id="switchBtn">MIRROR</button>
+  <button class="btn outline" id="saveBtn">SAVE</button>
+  <label class="btn" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;">
+    <input type="checkbox" id="autoDlToggle" style="width:14px;height:14px;accent-color:#000;margin:0;">
+    AUTO
+  </label>
   <span id="camStatus" style="font-size:0.65rem;opacity:.6;margin-left:auto;letter-spacing:1px;">OFFLINE</span>
 </div>
 <div class="error-msg" id="errorMsg">ERROR</div>
@@ -209,6 +215,7 @@ const statusTime = document.getElementById('statusTime');
 let stream = null;
 let photos = [];
 let mirrored = false;
+let autoDownload = false;
 let cameraActive = false;
 let resolution = '640x480';
 
@@ -271,6 +278,13 @@ function capturePhoto() {
   updateGallery();
   statusText.textContent = 'CAPTURED: ' + photos.length;
   countInfo.textContent = photos.length + ' PHOTO(S)';
+  if (autoDownload) {
+    const link = document.createElement('a');
+    link.download = `${new Date().toISOString().replace(/[:.]/g, "-")}--${Intl.DateTimeFormat().resolvedOptions().timeZone.replaceAll("/", "-")}.jpg`;
+    link.href = dataUrl;
+    link.click();
+    statusText.textContent = 'CAPTURED + DL';
+  }
 }
 
 function updateGallery() {
@@ -344,6 +358,11 @@ captureBtn.addEventListener('click', capturePhoto);
 saveBtn.addEventListener('click', saveLatest);
 clearBtn.addEventListener('click', clearAll);
 switchBtn.addEventListener('click', toggleMirror);
+document.getElementById('autoDlToggle').addEventListener('change', function() {
+  autoDownload = this.checked;
+  document.querySelector('.capture-panel').classList.toggle('hide', autoDownload);
+  statusText.textContent = autoDownload ? 'AUTO-DL ON' : 'AUTO-DL OFF';
+});
 pixelSelect.addEventListener('change', () => {
   resolution = pixelSelect.value;
   resInfo.textContent = resolution.replace('x', '\u00D7');
